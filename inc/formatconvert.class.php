@@ -1443,12 +1443,26 @@ class PluginFusioninventoryFormatconvert {
                  && gettype($a_softwares['PUBLISHER']) == 'array')  {
             $a_softwares['PUBLISHER'] = current($a_softwares['PUBLISHER']);
          }
-
+         
+         if (!isset($a_softwares['INSTALLDATE']) || $a_softwares['INSTALLDATE'] == '') {
+            $a_softwares['INSTALLDATE'] = null;
+         } else {
+            $a_split = explode("/", $a_softwares['INSTALLDATE']);
+            // 2011-06-29 13:19:48
+            if (isset($a_split[0])
+                  AND isset($a_split[1])
+                  AND isset($a_split[2])) {
+                     $a_softwares['INSTALLDATE'] = $a_split[2]."-".$a_split[1]."-".$a_split[0];
+            }
+            $a_split = explode("/", $a_softwares['INSTALLDATE']);
+         }
+         
          $array_tmp = $this->addValues($a_softwares,
                                         array(
                                            'PUBLISHER'   => 'manufacturers_id',
                                            'NAME'        => 'name',
-                                           'VERSION'     => 'version'));
+                                           'VERSION'     => 'version',
+                                           'INSTALLDATE' => 'date_install'));
          if (!isset($array_tmp['name'])
                  || $array_tmp['name'] == '') {
             if (isset($a_softwares['GUID'])
@@ -1516,11 +1530,13 @@ class PluginFusioninventoryFormatconvert {
                   $comp_key = strtolower($array_tmp['name']).
                                "$$$$".strtolower($array_tmp['version']).
                                "$$$$".$array_tmp['manufacturers_id'].
-                               "$$$$".$array_tmp['entities_id'];
+                               "$$$$".$array_tmp['entities_id'].
+                               "$$$$".$array_tmp['date_install'];
 
                   $comp_key_simple = strtolower($array_tmp['name']).
                                "$$$$".strtolower($array_tmp['version']).
-                               "$$$$".$array_tmp['entities_id'];
+                               "$$$$".$array_tmp['entities_id'].
+                               "$$$$".$array_tmp['date_install'];
 
                   if ($array_tmp['manufacturers_id'] == 0) {
                      $softwareWithoutManufacturer[$comp_key_simple] = $array_tmp;
