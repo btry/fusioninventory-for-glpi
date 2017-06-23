@@ -267,7 +267,8 @@ class PluginFusioninventoryFormatconvert {
          'printer'                 => array(),
          'peripheral'              => array(),
          'storage'                 => array(),
-         'remote_mgmt'             => array()
+         'remote_mgmt'             => array(),
+         'simcard'                 => array()
       );
       $thisc = new self();
       $pfConfig = new PluginFusioninventoryConfig();
@@ -932,6 +933,25 @@ class PluginFusioninventoryFormatconvert {
                   $array_tmp['frequence'] = $array_tmp['frequency'];
                   $array_tmp['frequency_default'] = $array_tmp['frequency'];
                   $a_inventory['processor'][] = $array_tmp;
+               }
+            }
+         }
+      }
+
+      // * SIMCARDS
+      $a_inventory['simcard'] = array();
+      if ($pfConfig->getValue('component_simcard') == 1) {
+         if (isset($array['SIMCARDS'])) {
+            foreach ($array['SIMCARDS'] as $a_simcards) {
+               if (is_array($a_simcards)
+                   && (isset($a_simcards['NAME'])
+                   || isset($a_simcards['TYPE']))) {
+                  $array_tmp = $thisc->addValues($a_sensors,
+                                                 array(
+                                                   'MANUFACTURER' => 'manufacturers_id',
+                                                   'NAME'         => 'designation',
+                                                   'TYPE'         => 'devicesensortypes_id'));
+                  $a_inventory['simcard'][] = $array_tmp;
                }
             }
          }

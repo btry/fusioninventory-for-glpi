@@ -117,6 +117,8 @@ class PluginFusioninventoryInventoryComputerLib extends CommonDBTM {
       $deviceMemory                 = new DeviceMemory();
       $item_DeviceBattery           = new Item_DeviceBattery();
       $deviceBattery                = new DeviceBattery();
+      $deviceSimcard                = new DeviceSimcard();
+      $item_DeviceSimcard           = new Item_DeviceSimcard();
       $computerVirtualmachine       = new ComputerVirtualMachine();
       $computerDisk                 = new ComputerDisk();
       $item_DeviceControl           = new Item_DeviceControl();
@@ -361,6 +363,58 @@ class PluginFusioninventoryInventoryComputerLib extends CommonDBTM {
                         $this->addProcessor($a_processor, $computers_id, $no_history);
                      }
                   }
+               }
+            }
+         }
+
+      // * Simcards
+         if ($pfConfig->getValue("component_simcard") != 0) {
+            $db_simcards = array();
+            if ($no_history === FALSE) {
+               $query = "SELECT `glpi_items_devicesensors`.`id`, `designation`,
+                           `serial`, `manufacturers_id`, `devicesensortypes_id`
+                         FROM `glpi_items_devicesensors`
+                         LEFT JOIN `glpi_devicesensors`
+                           ON `devicesensors_id`=`glpi_devicesensors`.`id`
+                         WHERE `items_id` = '$computers_id'
+                           AND `itemtype`='Computer'
+                           AND `is_dynamic`='1'";
+               $result = $DB->query($query);
+               while (($data = $DB->fetch_assoc($result))) {
+                  $idtmp = $data['id'];
+                  unset($data['id']);
+                  $db_simcards[$idtmp] = Toolbox::addslashes_deep($data);
+               }
+               if (count($db_simcards) == 0) {
+                  foreach ($a_computerinventory['simcard'] as $db_simcards) {
+                     $this->addSimcard($db_simcards, $computers_id, $no_history);
+                  }
+               } else {
+                  // Check all fields from source: 'designation', 'serial', 'manufacturers_id'
+                  foreach ($a_computerinventory['simcard'] as $key => $arrays) {
+                     if ($arrays == $arraydb) {
+                        $a_criteria = $deviceSimcard->getImportCriteria();
+                        unset($a_computerinventory['simcard'][$key]);
+                        unset($db_simcards[$keydb]);
+                        break;
+                     }
+                  }
+                  if (count($a_computerinventory['simcard']) == 0
+                      && count($db_simcards) == 0) {
+                     // Nothing to do
+                   } else {
+                      if (count($db_simcards) != 0) {
+                         // Delete simcard in DB
+                         foreach ($db_simcards as $idtmp => $data) {
+                            $item_DeviceSimcard->delete(array('id'=>$idtmp), 1);
+                         }
+                      }
+                      if (count($a_computerinventory['simcard']) != 0) {
+                         foreach ($a_computerinventory['simcard'] as $a_simcard) {
+                            $this->addSimcard($a_simcard, $computers_id, $no_history);
+                         }
+                      }
+                   }
                }
             }
          }
@@ -2138,6 +2192,28 @@ class PluginFusioninventoryInventoryComputerLib extends CommonDBTM {
       $data['is_dynamic']           = 1;
       $data['_no_history']          = $no_history;
       $item_DeviceProcessor->add($data, array(), !$no_history);
+   }
+
+
+   /**
+   * Add a new simcard component
+   *
+   * @param array $data
+   * @param integer $computers_id
+   * @param boolean $no_history
+   */
+   function addSimcard($data, $computers_id, $no_history) {
+      $item_DeviceSimcard        = new Item_DeviceSensor();
+      $deviceSimcard             = new DeviceSensor();
+
+      $simcards_id = $deviceSimcard->import($data);
+      $data['devicesensors_id']     = $simcards_id;
+      $data['itemtype']             = 'Computer';
+      $data['items_id']             = $computers_id;
+      $data['is_dynamic']           = 1;
+      $data['_no_history']          = $no_history;
+      $item_DeviceSimcard->add($data, array(), !$no_history);
+
    }
 
 
